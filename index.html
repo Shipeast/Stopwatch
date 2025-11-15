@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Stopky</title>
+<style>
+  :root{
+    --accent:#0ac2ca;
+    --bg:#0b1216;
+    --card:rgba(255,255,255,0.03);
+    --muted:rgba(255,255,255,0.6);
+    --radius:14px;
+    --shadow:0 6px 18px rgba(2,6,23,0.6);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    height:100%;
+    background:var(--bg);
+    color:#fff;
+    font-family:Inter,system-ui,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+
+  .card{
+    width:100%;
+    max-width:650px;
+    padding:32px;
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    border:1px solid rgba(255,255,255,0.04);
+  }
+
+  /* Datum */
+  .date{
+    text-align:center;
+    font-size:14px;
+    color:var(--muted);
+    margin-bottom:20px;
+    letter-spacing:0.5px;
+  }
+
+  .display{
+    display:flex;
+    justify-content:center;
+    align-items:end;
+    gap:22px;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+  }
+
+  .segment{
+    background:var(--card);
+    padding:14px 20px;
+    border-radius:12px;
+    min-width:120px;
+    text-align:center;
+  }
+
+  .digits{
+    font-family:"SFMono-Regular", Menlo, Monaco, "Roboto Mono", monospace;
+    font-weight:600;
+    font-size:clamp(34px,7vw,74px);
+    color:var(--accent);
+  }
+
+  .label{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:4px;
+    letter-spacing:1px;
+  }
+
+  /* milisekundy – menší a bez popisku */
+  .ms-digits{
+    font-family:"SFMono-Regular", Menlo, Monaco, "Roboto Mono", monospace;
+    font-weight:600;
+    font-size:clamp(18px,4vw,30px);
+    color:var(--accent);
+    margin-left:4px;
+  }
+
+  .controls{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+  }
+
+  button{
+    padding:12px 20px;
+    border-radius:10px;
+    font-weight:600;
+    font-size:15px;
+    cursor:pointer;
+    border:none;
+    transition:0.1s ease;
+  }
+
+  .btn-start{
+    background:linear-gradient(90deg,var(--accent),#4be9e8);
+    color:#002527;
+  }
+
+  .btn-reset{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.08);
+    color:var(--muted);
+  }
+
+  button:active{ transform:scale(.97); }
+
+  @media(max-width:520px){
+    .segment{min-width:95px;padding:10px 14px}
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <div class="date" id="date"></div>
+
+  <div class="display">
+
+    <div class="segment">
+      <div class="digits" id="hour">00</div>
+      <div class="label">HOD</div>
+    </div>
+
+    <div class="segment">
+      <div class="digits" id="min">00</div>
+      <div class="label">MIN</div>
+    </div>
+
+    <div class="segment">
+      <div class="digits" id="sec">00</div>
+      <div class="label">SEC</div>
+    </div>
+
+    <div class="ms-digits" id="ms">000</div>
+
+  </div>
+
+  <div class="controls">
+    <button id="startBtn" class="btn-start">Start</button>
+    <button id="resetBtn" class="btn-reset" disabled>Reset</button>
+  </div>
+
+</div>
+
+
+<script>
+let running = false;
+let startTs = 0;
+let elapsed = 0;
+let rafId = null;
+
+const hEl = document.getElementById("hour");
+const mEl = document.getElementById("min");
+const sEl = document.getElementById("sec");
+const msEl = document.getElementById("ms");
+
+/* Datum nahoře */
+function setDate(){
+  const d = new Date();
+  const f = d.toLocaleDateString("cs-CZ", { day:"2-digit", month:"2-digit", year:"numeric" });
+  document.getElementById("date").textContent = f;
+}
+setDate();
+
+function updateDisplay(ms){
+  const milliseconds = Math.floor(ms % 1000);
+  const seconds = Math.floor(ms / 1000) % 60;
+  const minutes = Math.floor(ms / 60000) % 60;
+  const hours   = Math.floor(ms / 3600000);
+
+  hEl.textContent = String(hours).padStart(2,"0");
+  mEl.textContent = String(minutes).padStart(2,"0");
+  sEl.textContent = String(seconds).padStart(2,"0");
+  msEl.textContent = String(milliseconds).padStart(3,"0");
+}
+
+function tick(){
+  if(!running) return;
+  const now = performance.now();
+  const total = elapsed + (now - startTs);
+  updateDisplay(total);
+  rafId = requestAnimationFrame(tick);
+}
+
+document.getElementById("startBtn").onclick = () => {
+  if(!running){
+    running = true;
+    startTs = performance.now();
+    document.getElementById("startBtn").textContent = "Pauza";
+    document.getElementById("resetBtn").disabled = false;
+    tick();
+  } else {
+    running = false;
+    elapsed += performance.now() - startTs;
+    document.getElementById("startBtn").textContent = "Start";
+    cancelAnimationFrame(rafId);
+  }
+};
+
+document.getElementById("resetBtn").onclick = () => {
+  running = false;
+  elapsed = 0;
+  updateDisplay(0);
+  document.getElementById("startBtn").textContent = "Start";
+  document.getElementById("resetBtn").disabled = true;
+  cancelAnimationFrame(rafId);
+};
+</script>
+
+</body>
+</html>
