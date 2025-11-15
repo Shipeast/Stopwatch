@@ -92,7 +92,7 @@ Attribution is optional.
 
 ## ⚡ Try it instantly
 
-Click here to **[preview the stopwatch in your browser](#)** (replace `#` with your file or hosted link)
+Click here to **[preview the stopwatch in your browser](https://shipeast.github.io/Stopwatch/)**
 
 ---
 
