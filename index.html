@@ -2,219 +2,314 @@
 <html lang="cs">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Stopky</title>
+<meta name="viewport" content="width=device-width, user-scalable=no">
+<title>Trickshot Stopwatch</title>
+
 <style>
   :root{
-    --accent:#0ac2ca;
-    --bg:#0b1216;
-    --card:rgba(255,255,255,0.03);
-    --muted:rgba(255,255,255,0.6);
-    --radius:14px;
-    --shadow:0 6px 18px rgba(2,6,23,0.6);
+    --main:#0ac2ca;
+    --bg:#05090b;
+    --panel:#0c1317;
   }
 
-  *{box-sizing:border-box;margin:0;padding:0}
+  *{margin:0;padding:0;box-sizing:border-box;}
   body{
-    height:100%;
+    font-family:"SF Mono",system-ui,monospace;
     background:var(--bg);
-    color:#fff;
-    font-family:Inter,system-ui,sans-serif;
+    color:white;
+    height:100vh;
     display:flex;
     align-items:center;
     justify-content:center;
-    padding:24px;
+    padding:20px;
   }
 
-  .card{
+  .wrap{
     width:100%;
-    max-width:650px;
+    max-width:760px;
+    background:var(--panel);
     padding:32px;
-    background:var(--card);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    border:1px solid rgba(255,255,255,0.04);
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,0.06);
+    box-shadow:0 0 28px var(--main);
+    position:relative;
   }
 
-  /* Datum */
+  .colorPicker{
+    position:absolute;
+    top:16px;
+    right:16px;
+    padding:8px 14px;
+    background:#0a1013;
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:10px;
+    color:white;
+    font-size:14px;
+  }
+
   .date{
     text-align:center;
-    font-size:14px;
-    color:var(--muted);
-    margin-bottom:20px;
-    letter-spacing:0.5px;
+    color:#9aa2a5;
+    margin-bottom:18px;
+    font-size:15px;
   }
 
   .display{
     display:flex;
-    justify-content:center;
-    align-items:end;
     gap:22px;
-    margin-bottom:24px;
+    justify-content:center;
+    align-items:flex-end;
     flex-wrap:wrap;
   }
 
-  .segment{
-    background:var(--card);
-    padding:14px 20px;
-    border-radius:12px;
-    min-width:120px;
+  .box{
+    background:#0a1013;
+    padding:22px 28px;
+    border-radius:14px;
+    min-width:130px;
     text-align:center;
+    box-shadow:0 0 16px #ffffff18;
+    border:1px solid rgba(255,255,255,0.08);
   }
 
   .digits{
-    font-family:"SFMono-Regular", Menlo, Monaco, "Roboto Mono", monospace;
-    font-weight:600;
-    font-size:clamp(34px,7vw,74px);
-    color:var(--accent);
+    font-size:90px;
+    font-weight:900;
+    color:var(--main);
+    text-shadow:0 0 20px var(--main);
   }
 
   .label{
-    font-size:12px;
-    color:var(--muted);
-    margin-top:4px;
-    letter-spacing:1px;
+    font-size:13px;
+    color:#9aa2a5;
+    margin-top:6px;
   }
 
-  /* milisekundy – menší a bez popisku */
-  .ms-digits{
-    font-family:"SFMono-Regular", Menlo, Monaco, "Roboto Mono", monospace;
-    font-weight:600;
-    font-size:clamp(18px,4vw,30px);
-    color:var(--accent);
-    margin-left:4px;
+  .ms{
+    font-size:40px;
+    font-weight:700;
+    margin-left:6px;
+    color:var(--main);
+    text-shadow:0 0 18px var(--main);
   }
 
   .controls{
+    margin-top:30px;
     display:flex;
-    gap:12px;
     justify-content:center;
+    gap:12px;
   }
 
   button{
-    padding:12px 20px;
-    border-radius:10px;
-    font-weight:600;
-    font-size:15px;
-    cursor:pointer;
+    padding:16px 30px;
+    border-radius:12px;
+    font-size:20px;
+    font-weight:700;
     border:none;
-    transition:0.1s ease;
   }
 
-  .btn-start{
-    background:linear-gradient(90deg,var(--accent),#4be9e8);
-    color:#002527;
+  .start{
+    background:var(--main);
+    color:black;
+    box-shadow:0 0 18px var(--main);
   }
 
-  .btn-reset{
-    background:transparent;
+  .reset{
+    background:#0a1013;
+    color:#9aa2a5;
     border:1px solid rgba(255,255,255,0.08);
-    color:var(--muted);
   }
 
-  button:active{ transform:scale(.97); }
-
-  @media(max-width:520px){
-    .segment{min-width:95px;padding:10px 14px}
+  /* Countdown overlay */
+  #countdown{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:160px;
+    font-weight:900;
+    color:var(--main);
+    text-shadow:0 0 35px var(--main);
+    background:rgba(0,0,0,0.83);
+    z-index:99;
+    display:none;
   }
+
+  /* Flash effect */
+  #flash{
+    position:absolute;
+    inset:0;
+    background:white;
+    opacity:0;
+    z-index:200;
+    pointer-events:none;
+    transition:opacity 0.2s;
+  }
+
 </style>
 </head>
 <body>
 
-<div class="card">
+<div class="wrap">
 
-  <div class="date" id="date"></div>
+  <!-- Flash effect -->
+  <div id="flash"></div>
 
+  <!-- Countdown -->
+  <div id="countdown"></div>
+
+  <!-- Color picker -->
+  <select class="colorPicker" id="colorPick">
+    <option value="#0ac2ca">Neon Blue</option>
+    <option value="#ff0058">Neon Red</option>
+    <option value="#39ff14">Neon Green</option>
+    <option value="#c400ff">Purple</option>
+    <option value="#ffffff">White</option>
+  </select>
+
+  <!-- Date -->
+  <div class="date" id="date">--.--.----</div>
+
+  <!-- Stopwatch display -->
   <div class="display">
-
-    <div class="segment">
-      <div class="digits" id="hour">00</div>
-      <div class="label">HOD</div>
-    </div>
-
-    <div class="segment">
-      <div class="digits" id="min">00</div>
-      <div class="label">MIN</div>
-    </div>
-
-    <div class="segment">
-      <div class="digits" id="sec">00</div>
-      <div class="label">SEC</div>
-    </div>
-
-    <div class="ms-digits" id="ms">000</div>
-
+    <div class="box"><div class="digits" id="h">00</div><div class="label">HOD</div></div>
+    <div class="box"><div class="digits" id="m">00</div><div class="label">MIN</div></div>
+    <div class="box"><div class="digits" id="s">00</div><div class="label">SEC</div></div>
+    <div class="ms" id="ms">000</div>
   </div>
 
+  <!-- Controls -->
   <div class="controls">
-    <button id="startBtn" class="btn-start">Start</button>
-    <button id="resetBtn" class="btn-reset" disabled>Reset</button>
+    <button class="start" id="startBtn">Start</button>
+    <button class="reset" id="resetBtn" disabled>Reset</button>
   </div>
+
+  <!-- Sound effects -->
+  <audio id="soundStart">
+    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEA..." type="audio/wav">
+  </audio>
+  <audio id="soundStop">
+    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEA..." type="audio/wav">
+  </audio>
+  <audio id="soundReset">
+    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEA..." type="audio/wav">
+  </audio>
 
 </div>
 
-
 <script>
-let running = false;
-let startTs = 0;
-let elapsed = 0;
-let rafId = null;
+/* Date */
+(()=>{
+  const d=new Date();
+  document.getElementById("date").textContent =
+    String(d.getDate()).padStart(2,"0")+"."+
+    String(d.getMonth()+1).padStart(2,"0")+"."+
+    d.getFullYear();
+})();
 
-const hEl = document.getElementById("hour");
-const mEl = document.getElementById("min");
-const sEl = document.getElementById("sec");
-const msEl = document.getElementById("ms");
+/* Stopwatch logic */
+let running=false, start=0, elapsed=0, raf=null;
 
-/* Datum nahoře */
-function setDate(){
-  const d = new Date();
-  const f = d.toLocaleDateString("cs-CZ", { day:"2-digit", month:"2-digit", year:"numeric" });
-  document.getElementById("date").textContent = f;
+const h=document.getElementById("h");
+const m=document.getElementById("m");
+const s=document.getElementById("s");
+const ms=document.getElementById("ms");
+const flash=document.getElementById("flash");
+const soundStart=document.getElementById("soundStart");
+const soundStop=document.getElementById("soundStop");
+const soundReset=document.getElementById("soundReset");
+
+/* Update display */
+function update(t){
+  const hours=Math.floor(t/3600000);
+  const mins=Math.floor(t/60000)%60;
+  const secs=Math.floor(t/1000)%60;
+  const milli=Math.floor(t%1000);
+  h.textContent=String(hours).padStart(2,"0");
+  m.textContent=String(mins).padStart(2,"0");
+  s.textContent=String(secs).padStart(2,"0");
+  ms.textContent=String(milli).padStart(3,"0");
 }
-setDate();
 
-function updateDisplay(ms){
-  const milliseconds = Math.floor(ms % 1000);
-  const seconds = Math.floor(ms / 1000) % 60;
-  const minutes = Math.floor(ms / 60000) % 60;
-  const hours   = Math.floor(ms / 3600000);
-
-  hEl.textContent = String(hours).padStart(2,"0");
-  mEl.textContent = String(minutes).padStart(2,"0");
-  sEl.textContent = String(seconds).padStart(2,"0");
-  msEl.textContent = String(milliseconds).padStart(3,"0");
-}
-
-function tick(){
+/* Main loop */
+function loop(){
   if(!running) return;
-  const now = performance.now();
-  const total = elapsed + (now - startTs);
-  updateDisplay(total);
-  rafId = requestAnimationFrame(tick);
+  update(elapsed+(performance.now()-start));
+  raf=requestAnimationFrame(loop);
 }
 
-document.getElementById("startBtn").onclick = () => {
-  if(!running){
-    running = true;
-    startTs = performance.now();
-    document.getElementById("startBtn").textContent = "Pauza";
-    document.getElementById("resetBtn").disabled = false;
-    tick();
+/* Flash effect */
+function flashEffect(){
+  flash.style.opacity="1";
+  setTimeout(()=>flash.style.opacity="0",150);
+}
+
+/* Countdown */
+function startCountdown(){
+  const cd=document.getElementById("countdown");
+  cd.style.display="flex";
+
+  let nums=["3","2","1","GO"];
+  let i=0;
+  cd.textContent=nums[i];
+  let interval=setInterval(()=>{
+    i++;
+    if(i<nums.length){
+      cd.textContent=nums[i];
+    } else {
+      clearInterval(interval);
+      cd.style.display="none";
+      soundStart.play();
+      realStart();
+    }
+  },900);
+}
+
+/* Real start */
+function realStart(){
+  running=true;
+  start=performance.now();
+  document.getElementById("startBtn").textContent="Pause";
+  document.getElementById("resetBtn").disabled=false;
+  loop();
+}
+
+/* Start button */
+document.getElementById("startBtn").onclick=()=>{
+  if(!running && elapsed===0){
+    startCountdown();
+  } else if(!running){
+    running=true;
+    start=performance.now();
+    document.getElementById("startBtn").textContent="Pause";
+    soundStart.play();
+    loop();
   } else {
-    running = false;
-    elapsed += performance.now() - startTs;
-    document.getElementById("startBtn").textContent = "Start";
-    cancelAnimationFrame(rafId);
+    running=false;
+    elapsed+=performance.now()-start;
+    document.getElementById("startBtn").textContent="Start";
+    flashEffect();
+    soundStop.play();
+    cancelAnimationFrame(raf);
   }
 };
 
-document.getElementById("resetBtn").onclick = () => {
-  running = false;
-  elapsed = 0;
-  updateDisplay(0);
-  document.getElementById("startBtn").textContent = "Start";
-  document.getElementById("resetBtn").disabled = true;
-  cancelAnimationFrame(rafId);
+/* Reset button */
+document.getElementById("resetBtn").onclick=()=>{
+  running=false;
+  elapsed=0;
+  update(0);
+  document.getElementById("startBtn").textContent="Start";
+  document.getElementById("resetBtn").disabled=true;
+  flashEffect();
+  soundReset.play();
+  cancelAnimationFrame(raf);
+};
+
+/* Color picker */
+document.getElementById("colorPick").onchange=(e)=>{
+  document.documentElement.style.setProperty("--main", e.target.value);
 };
 </script>
 
