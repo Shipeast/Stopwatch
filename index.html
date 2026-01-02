@@ -7,8 +7,7 @@
 
 <style>
 :root{
-  --main:#ff0058;
-  --pb:#39ff14;
+  --main:#ff0058; /* hlavní barva */
 }
 
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -74,7 +73,8 @@ body{
   opacity:.85;
   user-select:none;
   cursor:pointer;
-  color:var(--pb);
+  color:var(--main);
+  text-shadow:0 0 20px var(--main);
 }
 
 /* Controls */
@@ -103,12 +103,6 @@ button{
   background:rgba(255,255,255,0.08);
   color:#ccc;
   border:1px solid rgba(255,255,255,0.15);
-}
-
-/* PB state */
-#wrap.pb #time{
-  color:var(--pb);
-  text-shadow:0 0 40px var(--pb);
 }
 
 /* Flash */
@@ -163,7 +157,7 @@ updateDateTime();
 setInterval(updateDateTime,1000);
 
 /* ===== STATE ===== */
-const State={IDLE:0,RUNNING:1,PAUSED:2};
+const State={IDLE:0,RUNNING:1};
 let state=State.IDLE;
 
 let startTime=0;
@@ -229,51 +223,49 @@ function finishRun(){
   if(best===null || total<best){
     best=total;
     localStorage.setItem(PB_KEY,best);
-    wrap.classList.add("pb");
     updatePBText();
     flashPB();
   }
 }
 
 function startRun(){
-  wrap.classList.remove("pb");
   state=State.RUNNING;
   startTime=performance.now();
   startBtn.textContent="Pause";
   raf=requestAnimationFrame(loop);
 }
 
-function pauseRun(){
+function stopRun(){
   elapsed+=performance.now()-startTime;
-  state=State.PAUSED;
+  state=State.IDLE;
   startBtn.textContent="Start";
   finishRun();
-}
-
-function resetAll(){
-  cancelAnimationFrame(raf);
-  raf=null;
-  state=State.IDLE;
-  elapsed=0;
-  startTime=0;
-  startBtn.textContent="Start";
+  elapsed=0; // automatický reset
   render(0);
 }
 
 /* ===== CONTROLS ===== */
-startBtn.onclick=()=>state===State.RUNNING?pauseRun():startRun();
-document.getElementById("resetBtn").onclick=resetAll;
+startBtn.onclick=()=>{
+  if(state===State.RUNNING) stopRun();
+  else startRun();
+};
+
+document.getElementById("resetBtn").onclick=()=>{
+  state=State.IDLE;
+  elapsed=0;
+  render(0);
+};
 
 /* Keyboard */
 document.addEventListener("keydown",e=>{
   if(e.code==="Space"){ e.preventDefault(); startBtn.click(); }
-  if(e.code==="KeyR"){ resetAll(); }
+  if(e.code==="KeyR"){ elapsed=0; render(0); }
 });
 
 /* Auto pause */
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden && state===State.RUNNING){
-    pauseRun();
+    stopRun();
   }
 });
 
@@ -285,7 +277,6 @@ pbEl.addEventListener("pointerdown",()=>{
     localStorage.removeItem(PB_KEY);
     best=null;
     updatePBText();
-    wrap.classList.remove("pb");
   },2000);
 });
 pbEl.addEventListener("pointerup",()=>clearTimeout(holdTimer));
