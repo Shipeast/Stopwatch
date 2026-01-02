@@ -18,11 +18,13 @@ body{
   font-family:"SF Mono",system-ui,monospace;
   color:white;
   overflow:hidden;
+  touch-action:manipulation;
 }
 
 #wrap{
-  width:720px;
-  height:260px;
+  width:100%;
+  max-width:720px;
+  padding:16px 20px 20px;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -32,21 +34,20 @@ body{
 
 /* Date & clock */
 #date{
-  font-size:22px;
+  font-size:18px;
   opacity:.75;
-  margin-bottom:4px;
 }
 
 #clock{
-  font-size:26px;
+  font-size:22px;
   font-weight:700;
   opacity:.9;
-  margin-bottom:14px;
+  margin-bottom:10px;
 }
 
 /* Stopwatch */
 #time{
-  font-size:110px;
+  font-size:clamp(64px, 12vw, 110px);
   font-weight:900;
   color:var(--main);
   text-shadow:0 0 25px var(--main);
@@ -54,18 +55,46 @@ body{
 }
 
 #ms{
-  font-size:48px;
-  margin-left:12px;
+  font-size:clamp(28px, 5vw, 48px);
+  margin-left:8px;
   vertical-align:super;
   opacity:.8;
+}
+
+/* Controls */
+#controls{
+  display:flex;
+  gap:12px;
+  margin-top:16px;
+}
+
+button{
+  min-width:120px;
+  padding:14px 20px;
+  font-size:18px;
+  font-weight:800;
+  border-radius:14px;
+  border:none;
+}
+
+#startBtn{
+  background:var(--main);
+  color:black;
+  box-shadow:0 0 18px var(--main);
+}
+
+#resetBtn{
+  background:rgba(255,255,255,0.08);
+  color:#ccc;
+  border:1px solid rgba(255,255,255,0.15);
 }
 
 /* PB */
 #pbBadge{
   position:absolute;
-  bottom:8px;
-  right:12px;
-  font-size:22px;
+  bottom:6px;
+  right:10px;
+  font-size:18px;
   font-weight:800;
   color:var(--pb);
   opacity:0;
@@ -102,27 +131,31 @@ body{
   <div id="clock"></div>
 
   <div id="time">00:00:00<span id="ms">000</span></div>
+
+  <div id="controls">
+    <button id="startBtn">Start</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+
   <div id="pbBadge">PB</div>
 </div>
 
 <script>
 /* ===== DATE & CLOCK ===== */
-const dateEl = document.getElementById("date");
-const clockEl = document.getElementById("clock");
+const dateEl=document.getElementById("date");
+const clockEl=document.getElementById("clock");
 
 function updateDateTime(){
-  const d = new Date();
-  dateEl.textContent =
-    String(d.getDate()).padStart(2,"0") + "." +
-    String(d.getMonth()+1).padStart(2,"0") + "." +
+  const d=new Date();
+  dateEl.textContent=
+    String(d.getDate()).padStart(2,"0")+"."+
+    String(d.getMonth()+1).padStart(2,"0")+"."+
     d.getFullYear();
-
-  clockEl.textContent =
-    String(d.getHours()).padStart(2,"0") + ":" +
-    String(d.getMinutes()).padStart(2,"0") + ":" +
+  clockEl.textContent=
+    String(d.getHours()).padStart(2,"0")+":"+
+    String(d.getMinutes()).padStart(2,"0")+":"+
     String(d.getSeconds()).padStart(2,"0");
 }
-
 updateDateTime();
 setInterval(updateDateTime,1000);
 
@@ -136,13 +169,15 @@ let raf=null;
 
 /* ===== PB ===== */
 const PB_KEY="speedrun_pb";
-let best = Number(localStorage.getItem(PB_KEY)) || null;
+let best=Number(localStorage.getItem(PB_KEY))||null;
 
 /* ===== UI ===== */
 const wrap=document.getElementById("wrap");
 const timeEl=document.getElementById("time");
 const msEl=document.getElementById("ms");
 const flash=document.getElementById("flash");
+const startBtn=document.getElementById("startBtn");
+const resetBtn=document.getElementById("resetBtn");
 
 /* ===== FORMAT ===== */
 function format(t){
@@ -186,41 +221,54 @@ function finishRun(){
   }
 }
 
+function startRun(){
+  wrap.classList.remove("pb");
+  state=State.RUNNING;
+  startTime=performance.now();
+  startBtn.textContent="Pause";
+  raf=requestAnimationFrame(loop);
+}
+
+function pauseRun(){
+  elapsed+=performance.now()-startTime;
+  state=State.PAUSED;
+  startBtn.textContent="Start";
+  finishRun();
+}
+
 function resetAll(){
   cancelAnimationFrame(raf);
   raf=null;
   state=State.IDLE;
   elapsed=0;
   startTime=0;
+  startBtn.textContent="Start";
   wrap.classList.remove("pb");
   render(0);
 }
 
-/* ===== CONTROLS ===== */
+/* ===== BUTTONS ===== */
+startBtn.onclick=()=>{
+  if(state===State.RUNNING) pauseRun();
+  else startRun();
+};
+resetBtn.onclick=resetAll;
+
+/* ===== KEYBOARD ===== */
 document.addEventListener("keydown",e=>{
   if(e.code==="Space"){
     e.preventDefault();
-    if(state===State.RUNNING){
-      elapsed+=performance.now()-startTime;
-      state=State.PAUSED;
-      finishRun();
-    }else{
-      state=State.RUNNING;
-      startTime=performance.now();
-      raf=requestAnimationFrame(loop);
-    }
+    startBtn.click();
   }
   if(e.code==="KeyR"){
     resetAll();
   }
 });
 
-/* Auto pause on focus loss */
+/* Auto pause */
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden && state===State.RUNNING){
-    elapsed+=performance.now()-startTime;
-    state=State.PAUSED;
-    finishRun();
+    pauseRun();
   }
 });
 
