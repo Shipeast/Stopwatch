@@ -71,8 +71,10 @@ body{
 #pbTime{
   margin-top:6px;
   font-size:16px;
-  opacity:.65;
+  opacity:.85;
   user-select:none;
+  cursor:pointer;
+  color:var(--pb);
 }
 
 /* Controls */
@@ -259,10 +261,7 @@ function resetAll(){
 }
 
 /* ===== CONTROLS ===== */
-startBtn.onclick=()=>{
-  if(state===State.RUNNING) pauseRun();
-  else startRun();
-};
+startBtn.onclick=()=>state===State.RUNNING?pauseRun():startRun();
 document.getElementById("resetBtn").onclick=resetAll;
 
 /* Keyboard */
@@ -289,7 +288,6 @@ pbEl.addEventListener("pointerdown",()=>{
     wrap.classList.remove("pb");
   },2000);
 });
-
 pbEl.addEventListener("pointerup",()=>clearTimeout(holdTimer));
 pbEl.addEventListener("pointerleave",()=>clearTimeout(holdTimer));
 
