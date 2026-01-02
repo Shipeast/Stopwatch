@@ -7,7 +7,8 @@
 
 <style>
 :root{
-  --main:#ff0058; /* hlavní barva */
+  --main:#ff0058;
+  --pb:#ffff00; /* PB upozornění žlutě */
 }
 
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -23,7 +24,7 @@ body{
 #wrap{
   width:100%;
   max-width:720px;
-  padding:16px 20px 20px;
+  padding:16px 20px;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -72,7 +73,6 @@ body{
   font-size:16px;
   opacity:.85;
   user-select:none;
-  cursor:pointer;
   color:var(--main);
   text-shadow:0 0 20px var(--main);
 }
@@ -97,12 +97,6 @@ button{
   background:var(--main);
   color:black;
   box-shadow:0 0 18px var(--main);
-}
-
-#resetBtn{
-  background:rgba(255,255,255,0.08);
-  color:#ccc;
-  border:1px solid rgba(255,255,255,0.15);
 }
 
 /* Flash */
@@ -133,7 +127,6 @@ button{
 
   <div id="controls">
     <button id="startBtn">Start</button>
-    <button id="resetBtn">Reset</button>
   </div>
 </div>
 
@@ -141,7 +134,6 @@ button{
 /* ===== DATE & CLOCK ===== */
 const dateEl=document.getElementById("date");
 const clockEl=document.getElementById("clock");
-
 function updateDateTime(){
   const d=new Date();
   dateEl.textContent=
@@ -157,9 +149,8 @@ updateDateTime();
 setInterval(updateDateTime,1000);
 
 /* ===== STATE ===== */
-const State={IDLE:0,RUNNING:1};
+const State={IDLE:0,RUNNING:1,PAUSED:2};
 let state=State.IDLE;
-
 let startTime=0;
 let elapsed=0;
 let raf=null;
@@ -188,12 +179,21 @@ function fmt(t){
   };
 }
 
-function updatePBText(){
+function updatePBText(colorMain=false){
   if(best===null){
     pbEl.textContent="PB: --:--:--.---";
+    pbEl.style.color=varMain;
+    pbEl.style.textShadow=`0 0 20px var(--main)`;
   }else{
     const f=fmt(best);
     pbEl.textContent=`PB: ${f.main}.${f.ms}`;
+    if(colorMain){
+      pbEl.style.color="yellow";
+      pbEl.style.textShadow="0 0 25px yellow";
+    }else{
+      pbEl.style.color="var(--main)";
+      pbEl.style.textShadow="0 0 20px var(--main)";
+    }
   }
 }
 updatePBText();
@@ -223,7 +223,7 @@ function finishRun(){
   if(best===null || total<best){
     best=total;
     localStorage.setItem(PB_KEY,best);
-    updatePBText();
+    updatePBText(true); // PB upozornění žlutě
     flashPB();
   }
 }
@@ -235,48 +235,38 @@ function startRun(){
   raf=requestAnimationFrame(loop);
 }
 
-function stopRun(){
+function pauseRun(){
   elapsed+=performance.now()-startTime;
-  state=State.IDLE;
+  state=State.PAUSED;
   startBtn.textContent="Start";
-  finishRun();
-  elapsed=0; // automatický reset
-  render(0);
+  finishRun(); // PB upozornění
 }
 
 /* ===== CONTROLS ===== */
 startBtn.onclick=()=>{
-  if(state===State.RUNNING) stopRun();
+  if(state===State.RUNNING) pauseRun();
   else startRun();
-};
-
-document.getElementById("resetBtn").onclick=()=>{
-  state=State.IDLE;
-  elapsed=0;
-  render(0);
 };
 
 /* Keyboard */
 document.addEventListener("keydown",e=>{
   if(e.code==="Space"){ e.preventDefault(); startBtn.click(); }
-  if(e.code==="KeyR"){ elapsed=0; render(0); }
 });
 
 /* Auto pause */
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden && state===State.RUNNING){
-    stopRun();
+    pauseRun();
   }
 });
 
 /* ===== HIDDEN PB RESET (LONG PRESS) ===== */
 let holdTimer=null;
-
 pbEl.addEventListener("pointerdown",()=>{
   holdTimer=setTimeout(()=>{
     localStorage.removeItem(PB_KEY);
     best=null;
-    updatePBText();
+    updatePBText(false);
   },2000);
 });
 pbEl.addEventListener("pointerup",()=>clearTimeout(holdTimer));
