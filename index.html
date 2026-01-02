@@ -28,8 +28,8 @@ body{
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:center;
   position:relative;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Date & clock */
@@ -47,6 +47,8 @@ body{
 
 /* Stopwatch */
 #time{
+  display:flex;
+  align-items:flex-start;
   font-size:clamp(64px, 12vw, 110px);
   font-weight:900;
   color:var(--main);
@@ -54,18 +56,30 @@ body{
   letter-spacing:2px;
 }
 
+#time-main{
+  white-space:nowrap;
+}
+
 #ms{
   font-size:clamp(28px, 5vw, 48px);
   margin-left:8px;
-  vertical-align:super;
+  line-height:1;
   opacity:.8;
+}
+
+/* PB display */
+#pbTime{
+  margin-top:6px;
+  font-size:16px;
+  opacity:.65;
+  user-select:none;
 }
 
 /* Controls */
 #controls{
   display:flex;
   gap:12px;
-  margin-top:16px;
+  margin-top:14px;
 }
 
 button{
@@ -89,26 +103,10 @@ button{
   border:1px solid rgba(255,255,255,0.15);
 }
 
-/* PB */
-#pbBadge{
-  position:absolute;
-  bottom:6px;
-  right:10px;
-  font-size:18px;
-  font-weight:800;
-  color:var(--pb);
-  opacity:0;
-  text-shadow:0 0 12px var(--pb);
-  transition:opacity .3s;
-}
-
+/* PB state */
 #wrap.pb #time{
   color:var(--pb);
   text-shadow:0 0 40px var(--pb);
-}
-
-#wrap.pb #pbBadge{
-  opacity:1;
 }
 
 /* Flash */
@@ -130,14 +128,17 @@ button{
   <div id="date"></div>
   <div id="clock"></div>
 
-  <div id="time">00:00:00<span id="ms">000</span></div>
+  <div id="time">
+    <div id="time-main">00:00:00</div>
+    <div id="ms">000</div>
+  </div>
+
+  <div id="pbTime">PB: --:--:--.---</div>
 
   <div id="controls">
     <button id="startBtn">Start</button>
     <button id="resetBtn">Reset</button>
   </div>
-
-  <div id="pbBadge">PB</div>
 </div>
 
 <script>
@@ -173,14 +174,14 @@ let best=Number(localStorage.getItem(PB_KEY))||null;
 
 /* ===== UI ===== */
 const wrap=document.getElementById("wrap");
-const timeEl=document.getElementById("time");
+const timeMain=document.getElementById("time-main");
 const msEl=document.getElementById("ms");
+const pbEl=document.getElementById("pbTime");
 const flash=document.getElementById("flash");
 const startBtn=document.getElementById("startBtn");
-const resetBtn=document.getElementById("resetBtn");
 
 /* ===== FORMAT ===== */
-function format(t){
+function fmt(t){
   const h=Math.floor(t/3600000);
   const m=Math.floor(t/60000)%60;
   const s=Math.floor(t/1000)%60;
@@ -191,10 +192,20 @@ function format(t){
   };
 }
 
+function updatePBText(){
+  if(best===null){
+    pbEl.textContent="PB: --:--:--.---";
+  }else{
+    const f=fmt(best);
+    pbEl.textContent=`PB: ${f.main}.${f.ms}`;
+  }
+}
+updatePBText();
+
 /* ===== RENDER ===== */
 function render(t){
-  const f=format(t);
-  timeEl.firstChild.nodeValue=f.main;
+  const f=fmt(t);
+  timeMain.textContent=f.main;
   msEl.textContent=f.ms;
 }
 
@@ -217,6 +228,7 @@ function finishRun(){
     best=total;
     localStorage.setItem(PB_KEY,best);
     wrap.classList.add("pb");
+    updatePBText();
     flashPB();
   }
 }
@@ -243,26 +255,20 @@ function resetAll(){
   elapsed=0;
   startTime=0;
   startBtn.textContent="Start";
-  wrap.classList.remove("pb");
   render(0);
 }
 
-/* ===== BUTTONS ===== */
+/* ===== CONTROLS ===== */
 startBtn.onclick=()=>{
   if(state===State.RUNNING) pauseRun();
   else startRun();
 };
-resetBtn.onclick=resetAll;
+document.getElementById("resetBtn").onclick=resetAll;
 
-/* ===== KEYBOARD ===== */
+/* Keyboard */
 document.addEventListener("keydown",e=>{
-  if(e.code==="Space"){
-    e.preventDefault();
-    startBtn.click();
-  }
-  if(e.code==="KeyR"){
-    resetAll();
-  }
+  if(e.code==="Space"){ e.preventDefault(); startBtn.click(); }
+  if(e.code==="KeyR"){ resetAll(); }
 });
 
 /* Auto pause */
@@ -271,6 +277,21 @@ document.addEventListener("visibilitychange",()=>{
     pauseRun();
   }
 });
+
+/* ===== HIDDEN PB RESET (LONG PRESS) ===== */
+let holdTimer=null;
+
+pbEl.addEventListener("pointerdown",()=>{
+  holdTimer=setTimeout(()=>{
+    localStorage.removeItem(PB_KEY);
+    best=null;
+    updatePBText();
+    wrap.classList.remove("pb");
+  },2000);
+});
+
+pbEl.addEventListener("pointerup",()=>clearTimeout(holdTimer));
+pbEl.addEventListener("pointerleave",()=>clearTimeout(holdTimer));
 
 /* Init */
 render(0);
