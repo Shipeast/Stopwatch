@@ -64,10 +64,11 @@ Omezení:
 
 OBS Studio: https://obsproject.com/
 
-1. Otevři `index.html` v prohlížeči
-2. Přidej **Browser Source**
-3. Nastav šířku cca 720 px
-4. Zapni transparentní pozadí
+1. Přidej **Browser Source**
+2. Do pole **URL** vlož:  
+   `https://shipeast.github.io/Stopwatch/`
+3. Nastav šířku cca **720 px**
+4. Zapni **Transparent Background**
 
 Doporučeno vypnout interakci myší, pokud ovládáš klávesnicí.
 
