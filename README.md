@@ -1,109 +1,97 @@
-# ⏱️ Trickshot Stopwatch — Interactive README
+# Speedrun Overlay
 
-![Trickshot Stopwatch](https://img.shields.io/badge/status-ready-brightgreen) ![Offline](https://img.shields.io/badge/offline-100%25-blue)
+Jednoduchý HTML/JS overlay se stopkami pro speedruny.  
+Určeno pro použití jako **OBS Browser Source** nebo samostatně v prohlížeči.
 
-A **minimalist neon stopwatch** for trickshots, sports, and fast timing.  
-Works **offline** on **iPhone, Android, and PC**.  
-
----
-
-## ✨ Features
-
-- **Countdown**: 3…2…1 → GO  
-- **Ultra-large digits** for visibility in videos  
-- **Flash effect** on stop/reset  
-- **Sound effects**: start, stop, reset  
-- **Color picker**: Neon Blue, Red, Green, Purple, White  
-- Fully **offline & Safari compatible**  
-- Automatic **date display**  
+Bez knihoven, bez backendu, bez závislostí.
 
 ---
 
-## 📱 How to use on iPhone
+## Funkce
 
-1. Save `stopky_final_ios.html` to the **Files** app.  
-2. Long press → **Share** → **Open in Safari**.  
-3. Enjoy **full-screen neon stopwatch** with sounds and countdown.  
-
-💡 **Tip**: Rotate your phone horizontally to make the digits larger for trickshots.
-
----
-
-## 🎨 Color Picker
-
-You can instantly change the neon color via the picker in the top-right corner.  
-Available options:  
-- 💙 Neon Blue  
-- ❤️ Neon Red  
-- 💚 Neon Green  
-- 💜 Purple  
-- ⚪ White  
+- Stopky s přesností na milisekundy (`performance.now`)
+- Aktuální datum a čas
+- Automatické ukládání **PB (Personal Best)** do `localStorage`
+- Zvýraznění nového PB (žlutá barva + krátký flash)
+- Ovládání myší, dotykem i klávesnicí
+- Automatická pauza při ztrátě focusu okna
 
 ---
 
-## 🔊 Sound Effects
+## Ovládání
 
-- **Start:** beep when the stopwatch starts or countdown ends  
-- **Stop:** beep + flash when paused  
-- **Reset:** beep + flash  
+### Start / Pause
+- Klik na tlačítko **Start / Pause**
+- Klávesa **Space**
 
-> ⚠️ Make sure your phone is **not muted**, otherwise you won’t hear the sounds.
+Chování:
+- `Start` spustí běh
+- `Pause` zastaví běh **a vyhodnotí PB**
 
----
-
-## 💡 Tricks for trickshots
-
-- **Fullscreen**: rotate to landscape for maximum digit visibility  
-- **Do Not Disturb**: prevent interruptions  
-- **Tripod**: stabilize phone for consistent shots  
-- **Countdown**: gives you time to get ready before starting  
+> Pauza zároveň znamená konec běhu. Resume neexistuje.
 
 ---
 
-## 🛠️ Customization
+### Reset PB
+- Podrž text **PB** po dobu 2 sekund
+- PB se smaže z `localStorage`
 
-Edit the HTML file to adjust:  
-- `--main` variable in `:root` → changes neon color  
-- Font size in `.digits` and `.ms` → makes digits larger or smaller  
-- Flash opacity/duration → change intensity of the flash  
-
----
-
-## 📂 File Structure
-
-index.html — complete stopwatch
-README.md — this interactive guide
+Bez potvrzovací hlášky.
 
 ---
 
-## 🔧 Technology
+## Stavový model
 
-- Pure HTML, CSS, JavaScript  
-- No external libraries → works fully offline  
-
----
-
-## 📄 License
-
-Free for personal and commercial use.  
-Attribution is optional.
+IDLE → RUNNING → PAUSED
+- `IDLE` – výchozí stav
+- `RUNNING` – běží stopky
+- `PAUSED` – běh ukončen, čeká na nový start
 
 ---
 
-## ⚡ Try it instantly
+## PB logika
 
-Click here to **[preview the stopwatch in your browser](https://shipeast.github.io/Stopwatch/)**
+- PB se vyhodnocuje při ukončení běhu (`Pause`)
+- Nový PB přepíše starý pouze pokud je čas kratší
+- PB je uložen lokálně v prohlížeči
 
----
-
-### ⭐ Interactive Tips
-
-1. **Start with countdown**: press Start → 3…2…1 → GO  
-2. **Change color**: select a neon color in the top-right picker  
-3. **Stop with style**: pause → flash + beep  
-4. **Reset**: reset → flash + beep  
-5. **Fullscreen**: rotate device → digits expand  
+Omezení:
+- Krátký nebo omylem spuštěný běh může přepsat PB
 
 ---
 
-> Enjoy trickshot timing like a pro! 🎯
+## Použití v OBS
+
+OBS Studio: https://obsproject.com/
+
+1. Otevři `index.html` v prohlížeči
+2. Přidej **Browser Source**
+3. Nastav šířku cca 720 px
+4. Zapni transparentní pozadí
+
+Doporučeno vypnout interakci myší, pokud ovládáš klávesnicí.
+
+---
+
+## Technické detaily
+
+- Časování: `requestAnimationFrame`
+- Ukládání dat: `localStorage`
+- Bez externích knihoven
+- Transparentní pozadí
+- Responzivní layout
+
+---
+
+## Omezení
+
+- Žádné splity
+- Žádný manuální reset času (nutný reload stránky)
+- Žádný export PB
+- Pouze jeden běh bez resume
+
+---
+
+## Licence
+
+Používej, upravuj, rozšiřuj dle potřeby.
